@@ -1,0 +1,113 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+import datetime
+
+class Uitgave:
+    def __init__(self, datum, hotel, eten, transport, activiteiten):
+        self.datum = datum
+        self.hotel = hotel
+        self.eten = eten
+        self.transport = transport
+        self.activiteiten = activiteiten
+
+    @property
+    def totaal(self):
+        return self.hotel + self.eten + self.transport + self.activiteiten
+
+class VakantieBudgetTrackerApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Vakantie Budget Tracker")
+
+        self.uitgaven = []
+        self.setup_gui()
+
+    def setup_gui(self):
+        # Invoerframe
+        invoer_frame = ttk.LabelFrame(self.root, text="Vakantiegegevens")
+        invoer_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+
+        ttk.Label(invoer_frame, text="Startdatum (YYYY-MM-DD)").grid(row=0, column=0)
+        self.startdatum_entry = ttk.Entry(invoer_frame)
+        self.startdatum_entry.grid(row=0, column=1)
+
+        ttk.Label(invoer_frame, text="Aantal dagen").grid(row=1, column=0)
+        self.aantal_dagen_entry = ttk.Entry(invoer_frame)
+        self.aantal_dagen_entry.grid(row=1, column=1)
+
+        ttk.Label(invoer_frame, text="Dagbudget").grid(row=2, column=0)
+        self.dagbudget_entry = ttk.Entry(invoer_frame)
+        self.dagbudget_entry.grid(row=2, column=1)
+
+        self.init_button = ttk.Button(invoer_frame, text="Start", command=self.initialize_tracker)
+        self.init_button.grid(row=3, columnspan=2, pady=5)
+
+        # Uitgaveframe
+        self.uitgave_frame = ttk.LabelFrame(self.root, text="Dagelijkse uitgave invoer")
+        self.uitgave_frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+
+        labels = ["Datum", "Hotel", "Eten", "Transport", "Activiteiten"]
+        self.entries = {}
+        for i, label in enumerate(labels):
+            ttk.Label(self.uitgave_frame, text=label).grid(row=0, column=i)
+            entry = ttk.Entry(self.uitgave_frame)
+            entry.grid(row=1, column=i)
+            self.entries[label.lower()] = entry
+
+        self.toevoegen_button = ttk.Button(self.uitgave_frame, text="Toevoegen", command=self.voeg_uitgave_toe)
+        self.toevoegen_button.grid(row=2, columnspan=5, pady=5)
+
+        # Overzichtframe
+        self.overzicht_frame = ttk.LabelFrame(self.root, text="Overzicht")
+        self.overzicht_frame.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
+
+        self.tree = ttk.Treeview(self.overzicht_frame, columns=("hotel", "eten", "transport", "activiteiten", "totaal"), show='headings')
+        for col in self.tree["columns"]:
+            self.tree.heading(col, text=col.capitalize())
+        self.tree.grid(row=0, column=0, sticky="nsew")
+
+        self.status_label = ttk.Label(self.overzicht_frame, text="")
+        self.status_label.grid(row=1, column=0, pady=5)
+
+    def initialize_tracker(self):
+        try:
+            self.start_datum = datetime.datetime.strptime(self.startdatum_entry.get(), "%Y-%m-%d").date()
+            self.aantal_dagen = int(self.aantal_dagen_entry.get())
+            self.dagbudget = float(self.dagbudget_entry.get())
+            self.uitgaven.clear()
+            self.tree.delete(*self.tree.get_children())
+            self.update_status()
+        except Exception as e:
+            messagebox.showerror("Fout", f"Ongeldige invoer: {e}")
+
+    def voeg_uitgave_toe(self):
+        try:
+            datum = datetime.datetime.strptime(self.entries["datum"].get(), "%Y-%m-%d").date()
+            hotel = float(self.entries["hotel"].get())
+            eten = float(self.entries["eten"].get())
+            transport = float(self.entries["transport"].get())
+            activiteiten = float(self.entries["activiteiten"].get())
+
+            uitgave = Uitgave(datum, hotel, eten, transport, activiteiten)
+            self.uitgaven.append(uitgave)
+            self.tree.insert("", "end", values=(hotel, eten, transport, activiteiten, uitgave.totaal))
+            self.update_status()
+        except Exception as e:
+            messagebox.showerror("Fout", f"Ongeldige uitgave: {e}")
+
+    def update_status(self):
+        totaal_uitgegeven = sum(u.totaal for u in self.uitgaven)
+        ingevoerd_dagen = {u.datum for u in self.uitgaven}
+        resterende_dagen = self.aantal_dagen - len(ingevoerd_dagen)
+        nog_besteedbaar = self.dagbudget * self.aantal_dagen - totaal_uitgegeven
+        nieuw_gemiddelde = nog_besteedbaar / resterende_dagen if resterende_dagen > 0 else 0
+
+        self.status_label.config(text=f"Totaal uitgegeven: €{totaal_uitgegeven:.2f} | Nog te besteden: €{nog_besteedbaar:.2f} | Nieuw daggemiddelde: €{nieuw_gemiddelde:.2f}")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = VakantieBudgetTrackerApp(root)
+    root.mainloop()
+
+
+
