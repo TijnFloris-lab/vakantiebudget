@@ -19,12 +19,17 @@ SHEET_NAME = "VakantieUitgaven"
 def get_gsheet():
     creds = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
     client = gspread.authorize(creds)
+
     try:
         sheet = client.open(SHEET_NAME).sheet1
     except gspread.SpreadsheetNotFound:
-        sheet = client.create(SHEET_NAME).sheet1
+        spreadsheet = client.create(SHEET_NAME)
+        # Deel het met jezelf zodat je het later makkelijk kunt terugvinden in Drive
+        spreadsheet.share(SERVICE_ACCOUNT_INFO["client_email"], perm_type="user", role="writer")
+        sheet = spreadsheet.sheet1
         sheet.append_row(["Datum", "Hotel", "Eten", "Transport", "Activiteiten", "Totaal"])
     return sheet
+
 
 # Haal het Google Sheet werkblad op
 sheet = get_gsheet()
