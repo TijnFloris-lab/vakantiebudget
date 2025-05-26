@@ -11,7 +11,11 @@ st.set_page_config(page_title="Vakantie Budget Tracker", layout="wide")
 st.title("🏖️ Vakantie Budget Tracker")
 
 # Google Sheets authenticatie via secrets
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+SCOPES = [
+  "https://www.googleapis.com/auth/spreadsheets",
+  "https://www.googleapis.com/auth/drive"
+]
+
 SERVICE_ACCOUNT_INFO = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"])
 SHEET_NAME = "VakantieUitgaven"
 
